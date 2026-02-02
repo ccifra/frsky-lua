@@ -75,9 +75,9 @@ end
 local function getMode(value)
     -- Determine mode based on channel value
     -- Ethos values range from -1024 to 1024
-    if value < -512 then
+    if value <= -428 then
         return "Normal"
-    elseif value > 512 then
+    elseif value >= 428 then
         return "Heading Hold"
     else
         return "Off"
@@ -85,18 +85,11 @@ local function getMode(value)
 end
 
 local function calculateGain(value)
-    -- Calculate gain as percentage beyond 50% threshold
-    -- Returns nil for "Off" mode, percentage for Normal/Heading Hold
-    if value < -512 then
-        -- Normal mode: percentage below -50%
-        return math.floor(((math.abs(value) - 512) / 512) * 100)
-    elseif value > 512 then
-        -- Heading Hold mode: percentage above 50%
-        return math.floor(((value - 512) / 512) * 100)
-    else
-        -- Off mode: no gain
+    local gainPercent = (math.abs(value) - 428) / 596
+    if (gainPercent < 0) then
         return nil
     end
+    return math.floor(gainPercent * 100)
 end
 
 local function getModeColor(mode, widget)
@@ -202,7 +195,10 @@ local function paintFullView(widget, textColor, lineColor)
     
     -- Title
     lcd.color(textColor)
-    lcd.drawText(col1, y, "GYA553 Gyro Status", FONT_BOLD)
+    lcd.drawText(col1, y, "GYA553 Gyro XXX", FONT_BOLD)
+    
+    -- Debug: Show aileron raw value on screen
+    lcd.color(lcd.RGB(255, 0, 0))
     
     y = y + lineHeight
     

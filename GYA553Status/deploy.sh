@@ -2,7 +2,7 @@
 
 # Deploy GYA553Status widget to Ethos Suite simulator
 
-SOURCE="/Users/christopher.cifra/dev/LuaScripts/GYA553Status/main.lua"
+SOURCE="/Users/christopher.cifra/dev/LuaScripts/frsky-lua/GYA553Status/main.lua"
 DEST="/Applications/Ethos Suite.app/Contents/.simulator/1.6.3/persist/X20PROAW/scripts/GYA553Status"
 
 # Create destination directory if it doesn't exist

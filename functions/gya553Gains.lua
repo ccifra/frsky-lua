@@ -1,296 +1,187 @@
 -- GYA553 Gyro Gain Calculator
 -- Creates three sources for Aileron, Elevator, and Rudder gain channels
--- Each calculates: input * 0.6 + 50 for Heading Hold, input * -0.6 + 50 for Normal
+-- Each calculates: input * 0.6 + 512 for Heading Hold, input * -0.6 + 512 for Normal
 
-local aileronSource = nil
-local elevatorSource = nil
-local rudderSource = nil
+local aileronConfig = {
+    source = nil,
+    normalMode = 0,  -- 0 = Off, 1 = On, 2 = Switch
+    normalSwitch = nil,
+    hhMode = 0,
+    hhSwitch = nil,
+    lastInputValue = nil
+}
 
-local aileronNormalType = 0  -- 0 = Boolean, 1 = Switch
-local aileronNormalMode = nil
-local aileronNormalSwitch = nil
-local aileronHHType = 0
-local aileronHHMode = nil
-local aileronHHSwitch = nil
+local elevatorConfig = {
+    source = nil,
+    normalMode = 0,
+    normalSwitch = nil,
+    hhMode = 0,
+    hhSwitch = nil,
+    lastInputValue = nil
+}
 
-local elevatorNormalType = 0
-local elevatorNormalMode = nil
-local elevatorNormalSwitch = nil
-local elevatorHHType = 0
-local elevatorHHMode = nil
-local elevatorHHSwitch = nil
+local rudderConfig = {
+    source = nil,
+    normalMode = 0,
+    normalSwitch = nil,
+    hhMode = 0,
+    hhSwitch = nil,
+    lastInputValue = nil
+}
 
-local rudderNormalType = 0
-local rudderNormalMode = nil
-local rudderNormalSwitch = nil
-local rudderHHType = 0
-local rudderHHMode = nil
-local rudderHHSwitch = nil
+-- Helper function to add configuration fields for a gyro axis
+local function addAxisConfig(axisName, config)
+    local line = form.addLine(axisName .. " Gain Input")
+    form.addSourceField(line, nil,
+        function() return config.source end,
+        function(value) config.source = value end)
+    
+    line = form.addLine("Normal Mode")
+    form.addChoiceField(line, nil, {{"Off", 0}, {"On", 1}, {"Switch", 2}},
+        function() return config.normalMode end,
+        function(value) config.normalMode = value end)
+    
+    line = form.addLine("Normal Switch")
+    form.addSourceField(line, nil,
+        function() return config.normalSwitch end,
+        function(value) config.normalSwitch = value end)
+    
+    line = form.addLine("Heading Hold Mode")
+    form.addChoiceField(line, nil, {{"Off", 0}, {"On", 1}, {"Switch", 2}},
+        function() return config.hhMode end,
+        function(value) config.hhMode = value end)
+    
+    line = form.addLine("HH Switch")
+    form.addSourceField(line, nil,
+        function() return config.hhSwitch end,
+        function(value) config.hhSwitch = value end)
+end
 
 local function configureAileron()
-    local line = form.addLine("Aileron Gain Input")
-    form.addSourceField(line, nil,
-        function() return aileronSource end,
-        function(value) aileronSource = value end)
-    
-    line = form.addLine("Normal Mode Type")
-    form.addChoiceField(line, nil, {{"Boolean", 0}, {"Switch", 1}},
-        function() return aileronNormalType end,
-        function(value) aileronNormalType = value end)
-    
-    line = form.addLine("Normal Mode Bool")
-    form.addBooleanField(line, nil,
-        function() return aileronNormalMode end,
-        function(value) aileronNormalMode = value end)
-    
-    line = form.addLine("Normal Mode Switch")
-    form.addSourceField(line, nil,
-        function() return aileronNormalSwitch end,
-        function(value) aileronNormalSwitch = value end)
-    
-    line = form.addLine("HH Mode Type")
-    form.addChoiceField(line, nil, {{"Boolean", 0}, {"Switch", 1}},
-        function() return aileronHHType end,
-        function(value) aileronHHType = value end)
-    
-    line = form.addLine("HH Mode Bool")
-    form.addBooleanField(line, nil,
-        function() return aileronHHMode end,
-        function(value) aileronHHMode = value end)
-    
-    line = form.addLine("HH Mode Switch")
-    form.addSourceField(line, nil,
-        function() return aileronHHSwitch end,
-        function(value) aileronHHSwitch = value end)
+    addAxisConfig("Aileron", aileronConfig)
 end
 
 local function configureElevator()
-    local line = form.addLine("Elevator Gain Input")
-    form.addSourceField(line, nil,
-        function() return elevatorSource end,
-        function(value) elevatorSource = value end)
-    
-    line = form.addLine("Normal Mode Type")
-    form.addChoiceField(line, nil, {{"Boolean", 0}, {"Switch", 1}},
-        function() return elevatorNormalType end,
-        function(value) elevatorNormalType = value end)
-    
-    line = form.addLine("Normal Mode Bool")
-    form.addBooleanField(line, nil,
-        function() return elevatorNormalMode end,
-        function(value) elevatorNormalMode = value end)
-    
-    line = form.addLine("Normal Mode Switch")
-    form.addSourceField(line, nil,
-        function() return elevatorNormalSwitch end,
-        function(value) elevatorNormalSwitch = value end)
-    
-    line = form.addLine("HH Mode Type")
-    form.addChoiceField(line, nil, {{"Boolean", 0}, {"Switch", 1}},
-        function() return elevatorHHType end,
-        function(value) elevatorHHType = value end)
-    
-    line = form.addLine("HH Mode Bool")
-    form.addBooleanField(line, nil,
-        function() return elevatorHHMode end,
-        function(value) elevatorHHMode = value end)
-    
-    line = form.addLine("HH Mode Switch")
-    form.addSourceField(line, nil,
-        function() return elevatorHHSwitch end,
-        function(value) elevatorHHSwitch = value end)
+    addAxisConfig("Elevator", elevatorConfig)
 end
 
 local function configureRudder()
-    local line = form.addLine("Rudder Gain Input")
-    form.addSourceField(line, nil,
-        function() return rudderSource end,
-        function(value) rudderSource = value end)
-    
-    line = form.addLine("Normal Mode Type")
-    form.addChoiceField(line, nil, {{"Boolean", 0}, {"Switch", 1}},
-        function() return rudderNormalType end,
-        function(value) rudderNormalType = value end)
-    
-    line = form.addLine("Normal Mode Bool")
-    form.addBooleanField(line, nil,
-        function() return rudderNormalMode end,
-        function(value) rudderNormalMode = value end)
-    
-    line = form.addLine("Normal Mode Switch")
-    form.addSourceField(line, nil,
-        function() return rudderNormalSwitch end,
-        function(value) rudderNormalSwitch = value end)
-    
-    line = form.addLine("HH Mode Type")
-    form.addChoiceField(line, nil, {{"Boolean", 0}, {"Switch", 1}},
-        function() return rudderHHType end,
-        function(value) rudderHHType = value end)
-    
-    line = form.addLine("HH Mode Bool")
-    form.addBooleanField(line, nil,
-        function() return rudderHHMode end,
-        function(value) rudderHHMode = value end)
-    
-    line = form.addLine("HH Mode Switch")
-    form.addSourceField(line, nil,
-        function() return rudderHHSwitch end,
-        function(value) rudderHHSwitch = value end)
+    addAxisConfig("Rudder", rudderConfig)
+end
+
+-- Helper function to read config from storage
+local function readConfig(prefix, config)
+    config.source = storage.read(prefix .. "Source")
+    config.normalMode = storage.read(prefix .. "NormalMode") or 0
+    config.normalSwitch = storage.read(prefix .. "NormalSwitch")
+    config.hhMode = storage.read(prefix .. "HHMode") or 0
+    config.hhSwitch = storage.read(prefix .. "HHSwitch")
 end
 
 local function readAileron()
-    aileronSource = storage.read("aileronSource")
-    aileronNormalType = storage.read("aileronNormalType") or 0
-    aileronNormalMode = storage.read("aileronNormalMode")
-    aileronNormalSwitch = storage.read("aileronNormalSwitch")
-    aileronHHType = storage.read("aileronHHType") or 0
-    aileronHHMode = storage.read("aileronHHMode")
-    aileronHHSwitch = storage.read("aileronHHSwitch")
+    readConfig("aileron", aileronConfig)
 end
 
 local function readElevator()
-    elevatorSource = storage.read("elevatorSource")
-    elevatorNormalType = storage.read("elevatorNormalType") or 0
-    elevatorNormalMode = storage.read("elevatorNormalMode")
-    elevatorNormalSwitch = storage.read("elevatorNormalSwitch")
-    elevatorHHType = storage.read("elevatorHHType") or 0
-    elevatorHHMode = storage.read("elevatorHHMode")
-    elevatorHHSwitch = storage.read("elevatorHHSwitch")
+    readConfig("elevator", elevatorConfig)
 end
 
 local function readRudder()
-    rudderSource = storage.read("rudderSource")
-    rudderNormalType = storage.read("rudderNormalType") or 0
-    rudderNormalMode = storage.read("rudderNormalMode")
-    rudderNormalSwitch = storage.read("rudderNormalSwitch")
-    rudderHHType = storage.read("rudderHHType") or 0
-    rudderHHMode = storage.read("rudderHHMode")
-    rudderHHSwitch = storage.read("rudderHHSwitch")
+    readConfig("rudder", rudderConfig)
+end
+
+-- Helper function to write config to storage
+local function writeConfig(prefix, config)
+    storage.write(prefix .. "Source", config.source)
+    storage.write(prefix .. "NormalMode", config.normalMode)
+    storage.write(prefix .. "NormalSwitch", config.normalSwitch)
+    storage.write(prefix .. "HHMode", config.hhMode)
+    storage.write(prefix .. "HHSwitch", config.hhSwitch)
 end
 
 local function writeAileron()
-    storage.write("aileronSource", aileronSource)
-    storage.write("aileronNormalType", aileronNormalType)
-    storage.write("aileronNormalMode", aileronNormalMode)
-    storage.write("aileronNormalSwitch", aileronNormalSwitch)
-    storage.write("aileronHHType", aileronHHType)
-    storage.write("aileronHHMode", aileronHHMode)
-    storage.write("aileronHHSwitch", aileronHHSwitch)
+    writeConfig("aileron", aileronConfig)
 end
 
 local function writeElevator()
-    storage.write("elevatorSource", elevatorSource)
-    storage.write("elevatorNormalType", elevatorNormalType)
-    storage.write("elevatorNormalMode", elevatorNormalMode)
-    storage.write("elevatorNormalSwitch", elevatorNormalSwitch)
-    storage.write("elevatorHHType", elevatorHHType)
-    storage.write("elevatorHHMode", elevatorHHMode)
-    storage.write("elevatorHHSwitch", elevatorHHSwitch)
+    writeConfig("elevator", elevatorConfig)
 end
 
 local function writeRudder()
-    storage.write("rudderSource", rudderSource)
-    storage.write("rudderNormalType", rudderNormalType)
-    storage.write("rudderNormalMode", rudderNormalMode)
-    storage.write("rudderNormalSwitch", rudderNormalSwitch)
-    storage.write("rudderHHType", rudderHHType)
-    storage.write("rudderHHMode", rudderHHMode)
-    storage.write("rudderHHSwitch", rudderHHSwitch)
+    writeConfig("rudder", rudderConfig)
+end
+
+-- Helper function to check if a mode is active
+-- mode: 0 = Off, 1 = On, 2 = Switch
+-- switchSource: the switch source to check if mode is 2
+local function isModeActive(mode, switchSource)
+    if mode == 1 then
+        return true
+    elseif mode == 2 then
+        return switchSource and switchSource:value() > 0
+    end
+    return false
+end
+
+-- Helper function to calculate gain based on input value and mode settings
+local function calculateGain(config)
+    local inputValue = config.source:value()
+    local sourceName = config.source:name()
+    local sourceMax = config.source:maximum()
+    local sourceMin = config.source:minimum()
+
+    -- Only log when input value changes
+    local shouldLog = (inputValue ~= config.lastInputValue)
+    if shouldLog then
+        config.lastInputValue = inputValue
+    end
+    
+    if (inputValue < 0) then
+        inputValue = 0
+    end
+    
+    -- Try to use rawValue for consistent range across all source types
+    print ("inputValue for", sourceName, "is", inputValue, " (min:", sourceMin, "max:", sourceMax, ")")
+    local normalizedValue = (inputValue / sourceMax)
+    print("Normalized from", inputValue , "to", normalizedValue)
+    
+    if isModeActive(config.normalMode, config.normalSwitch) then
+        local result = -((normalizedValue * 596) + 428)
+        return result
+    elseif isModeActive(config.hhMode, config.hhSwitch) then
+        local result = (normalizedValue * 596) + 428
+        return result
+    end
+    if shouldLog then
+        print("calculateGain - No mode active, returning default")
+    end
+    return (0)
 end
 
 local function wakeupAileron(source)
-    if aileronSource then
-        local value = aileronSource:value()
-        local result = 50
-        
-        local normalActive = false
-        local hhActive = false
-        
-        if aileronNormalType == 0 then
-            normalActive = aileronNormalMode == true
-        else
-            normalActive = aileronNormalSwitch and aileronNormalSwitch:value() > 0
-        end
-        
-        if aileronHHType == 0 then
-            hhActive = aileronHHMode == true
-        else
-            hhActive = aileronHHSwitch and aileronHHSwitch:value() > 0
-        end
-        
-        if normalActive then
-            result = (value * -0.6) + 50
-        elseif hhActive then
-            result = (value * 0.6) + 50
-        end
-        
+    if aileronConfig.source then
+        local result = calculateGain(aileronConfig)
         source:value(result)
     else
-        source:value(50)
+        source:value(0)
     end
 end
 
 local function wakeupElevator(source)
-    if elevatorSource then
-        local value = elevatorSource:value()
-        local result = 50
-        
-        local normalActive = false
-        local hhActive = false
-        
-        if elevatorNormalType == 0 then
-            normalActive = elevatorNormalMode == true
-        else
-            normalActive = elevatorNormalSwitch and elevatorNormalSwitch:value() > 0
-        end
-        
-        if elevatorHHType == 0 then
-            hhActive = elevatorHHMode == true
-        else
-            hhActive = elevatorHHSwitch and elevatorHHSwitch:value() > 0
-        end
-        
-        if normalActive then
-            result = (value * -0.6) + 50
-        elseif hhActive then
-            result = (value * 0.6) + 50
-        end
-        
+    if elevatorConfig.source then
+        local result = calculateGain(elevatorConfig)
         source:value(result)
     else
-        source:value(50)
+        source:value(0)
     end
 end
 
 local function wakeupRudder(source)
-    if rudderSource then
-        local value = rudderSource:value()
-        local result = 50
-        
-        local normalActive = false
-        local hhActive = false
-        
-        if rudderNormalType == 0 then
-            normalActive = rudderNormalMode == true
-        else
-            normalActive = rudderNormalSwitch and rudderNormalSwitch:value() > 0
-        end
-        
-        if rudderHHType == 0 then
-            hhActive = rudderHHMode == true
-        else
-            hhActive = rudderHHSwitch and rudderHHSwitch:value() > 0
-        end
-        
-        if normalActive then
-            result = (value * -0.6) + 50
-        elseif hhActive then
-            result = (value * 0.6) + 50
-        end
-        
+    if rudderConfig.source then
+        local result = calculateGain(rudderConfig)
         source:value(result)
     else
-        source:value(50)
+        source:value(0)
     end
 end
 
