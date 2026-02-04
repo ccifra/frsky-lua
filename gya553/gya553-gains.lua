@@ -4,27 +4,24 @@
 
 local aileronConfig = {
     source = nil,
-    normalMode = 0,  -- 0 = Off, 1 = On, 2 = Switch
+    mode = 0,  -- 0 = Off, 1 = Normal, 2 = Heading Hold, 3 = Switched
     normalSwitch = nil,
-    hhMode = 0,
     hhSwitch = nil,
     lastInputValue = nil
 }
 
 local elevatorConfig = {
     source = nil,
-    normalMode = 0,
+    mode = 0,
     normalSwitch = nil,
-    hhMode = 0,
     hhSwitch = nil,
     lastInputValue = nil
 }
 
 local rudderConfig = {
     source = nil,
-    normalMode = 0,
+    mode = 0,
     normalSwitch = nil,
-    hhMode = 0,
     hhSwitch = nil,
     lastInputValue = nil
 }
@@ -36,22 +33,17 @@ local function addAxisConfig(axisName, config)
         function() return config.source end,
         function(value) config.source = value end)
     
-    line = form.addLine("Normal Mode")
-    form.addChoiceField(line, nil, {{"Off", 0}, {"On", 1}, {"Switch", 2}},
-        function() return config.normalMode end,
-        function(value) config.normalMode = value end)
+    line = form.addLine("Mode")
+    form.addChoiceField(line, nil, {{"Off", 0}, {"Normal", 1}, {"Heading Hold", 2}, {"Switched", 3}},
+        function() return config.mode end,
+        function(value) config.mode = value end)
     
     line = form.addLine("Normal Switch")
     form.addSourceField(line, nil,
         function() return config.normalSwitch end,
         function(value) config.normalSwitch = value end)
     
-    line = form.addLine("Heading Hold Mode")
-    form.addChoiceField(line, nil, {{"Off", 0}, {"On", 1}, {"Switch", 2}},
-        function() return config.hhMode end,
-        function(value) config.hhMode = value end)
-    
-    line = form.addLine("HH Switch")
+    line = form.addLine("Heading Hold Switch")
     form.addSourceField(line, nil,
         function() return config.hhSwitch end,
         function(value) config.hhSwitch = value end)
@@ -72,9 +64,8 @@ end
 -- Helper function to read config from storage
 local function readConfig(prefix, config)
     config.source = storage.read(prefix .. "Source")
-    config.normalMode = storage.read(prefix .. "NormalMode") or 0
+    config.mode = storage.read(prefix .. "Mode") or 0
     config.normalSwitch = storage.read(prefix .. "NormalSwitch")
-    config.hhMode = storage.read(prefix .. "HHMode") or 0
     config.hhSwitch = storage.read(prefix .. "HHSwitch")
 end
 
@@ -93,9 +84,8 @@ end
 -- Helper function to write config to storage
 local function writeConfig(prefix, config)
     storage.write(prefix .. "Source", config.source)
-    storage.write(prefix .. "NormalMode", config.normalMode)
+    storage.write(prefix .. "Mode", config.mode)
     storage.write(prefix .. "NormalSwitch", config.normalSwitch)
-    storage.write(prefix .. "HHMode", config.hhMode)
     storage.write(prefix .. "HHSwitch", config.hhSwitch)
 end
 
@@ -111,18 +101,6 @@ local function writeRudder()
     writeConfig("rudder", rudderConfig)
 end
 
--- Helper function to check if a mode is active
--- mode: 0 = Off, 1 = On, 2 = Switch
--- switchSource: the switch source to check if mode is 2
-local function isModeActive(mode, switchSource)
-    if mode == 1 then
-        return true
-    elseif mode == 2 then
-        return switchSource and switchSource:value() > 0
-    end
-    return false
-end
-
 -- Helper function to calculate gain based on input value and mode settings
 local function calculateGain(config)
     local inputValue = config.source:value()
@@ -130,32 +108,56 @@ local function calculateGain(config)
     local sourceMax = config.source:maximum()
     local sourceMin = config.source:minimum()
 
-    -- Only log when input value changes
-    local shouldLog = (inputValue ~= config.lastInputValue)
-    if shouldLog then
-        config.lastInputValue = inputValue
-    end
-    
     if (inputValue < 0) then
         inputValue = 0
     end
     
-    -- Try to use rawValue for consistent range across all source types
-    print ("inputValue for", sourceName, "is", inputValue, " (min:", sourceMin, "max:", sourceMax, ")")
+    -- Normalize input value
     local normalizedValue = (inputValue / sourceMax)
-    print("Normalized from", inputValue , "to", normalizedValue)
     
-    if isModeActive(config.normalMode, config.normalSwitch) then
+    -- Determine active mode
+    -- mode: 0 = Off, 1 = Normal, 2 = Heading Hold, 3 = Switched
+    local activeMode = config.mode
+    
+    if config.mode == 3 then
+        -- Switched mode - check switch positions to determine actual mode
+        -- User can select specific switch positions (e.g., SA↑, SB-, etc.)
+        -- These sources are active (>0) when in that position
+        local normalActive = false
+        local hhActive = false
+        
+        if config.normalSwitch ~= nil and type(config.normalSwitch) == "userdata" then
+            local normalSwitchValue = config.normalSwitch:value()
+            normalActive = normalSwitchValue > 0
+        end
+        
+        if config.hhSwitch ~= nil and type(config.hhSwitch) == "userdata" then
+            local hhSwitchValue = config.hhSwitch:value()
+            hhActive = hhSwitchValue > 0
+        end
+        
+        if normalActive then
+            activeMode = 1  -- Normal
+        elseif hhActive then
+            activeMode = 2  -- Heading Hold
+        else
+            activeMode = 0  -- Off
+        end
+    end
+    
+    -- Calculate result based on active mode
+    if activeMode == 1 then
+        -- Normal mode
         local result = -((normalizedValue * 596) + 428)
         return result
-    elseif isModeActive(config.hhMode, config.hhSwitch) then
+    elseif activeMode == 2 then
+        -- Heading Hold mode
         local result = (normalizedValue * 596) + 428
         return result
     end
-    if shouldLog then
-        print("calculateGain - No mode active, returning default")
-    end
-    return (0)
+    
+    -- Off mode
+    return 0
 end
 
 local function wakeupAileron(source)
@@ -187,8 +189,8 @@ end
 
 local function init()
     system.registerSource({
-        key = "GYAAil",
-        name = "GYA Aileron",
+        key = "GYA553A",
+        name = "GYA553 Ail Gain",
         wakeup = wakeupAileron,
         read = readAileron,
         write = writeAileron,
@@ -196,8 +198,8 @@ local function init()
     })
     
     system.registerSource({
-        key = "GYAEle",
-        name = "GYA Elevator",
+        key = "GYA553E",
+        name = "GYA553 Ele Gain",
         wakeup = wakeupElevator,
         read = readElevator,
         write = writeElevator,
@@ -205,8 +207,8 @@ local function init()
     })
     
     system.registerSource({
-        key = "GYARud",
-        name = "GYA Rudder",
+        key = "GYA553R",
+        name = "GYA553 Rud Gain",
         wakeup = wakeupRudder,
         read = readRudder,
         write = writeRudder,

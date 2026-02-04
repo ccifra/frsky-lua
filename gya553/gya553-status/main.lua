@@ -106,9 +106,9 @@ end
 local function paintCompactView(widget, textColor)
     -- Compact view - simplified display
     local y = 5
-    local lineHeight = 26
+    local lineHeight = 34
     local col1 = 5
-    local col2 = 45
+    local col2 = 50
     local col3 = 175
     
     -- Compact rows - just axis label, mode, and gain
@@ -119,15 +119,15 @@ local function paintCompactView(widget, textColor)
         lcd.color(textColor)
         lcd.drawText(col1, y, "A:", 0)
         lcd.color(modeColor)
-        lcd.drawFilledRectangle(col2 - 2, y - 2, 120, 18)
+        lcd.drawFilledRectangle(col2 - 2, y - 2, 120, 24)
         lcd.color(lcd.RGB(255, 255, 255))
-        lcd.drawText(col2, y, mode, FONT_S + FONT_S)
+        lcd.drawText(col2, y, mode, FONT_S)
         lcd.color(textColor)
         
         local gain = calculateGain(widget.aileronValue)
         if gain ~= nil then
             lcd.drawNumber(col3, y, gain, 0)
-            lcd.drawText(col3 + 20, y, "%", 0)
+            lcd.drawText(col3 + 42, y, "%", 0)
         end
         y = y + lineHeight
     end
@@ -139,15 +139,15 @@ local function paintCompactView(widget, textColor)
         lcd.color(textColor)
         lcd.drawText(col1, y, "E:", 0)
         lcd.color(modeColor)
-        lcd.drawFilledRectangle(col2 - 2, y - 2, 120, 18)
+        lcd.drawFilledRectangle(col2 - 2, y - 2, 120, 24)
         lcd.color(lcd.RGB(255, 255, 255))
-        lcd.drawText(col2, y, mode, FONT_S + FONT_S)
+        lcd.drawText(col2, y, mode, FONT_S)
         lcd.color(textColor)
         
         local gain = calculateGain(widget.elevatorValue)
         if gain ~= nil then
             lcd.drawNumber(col3, y, gain, 0)
-            lcd.drawText(col3 + 20, y, "%", 0)
+            lcd.drawText(col3 + 42, y, "%", 0)
         end
         y = y + lineHeight
     end
@@ -159,15 +159,15 @@ local function paintCompactView(widget, textColor)
         lcd.color(textColor)
         lcd.drawText(col1, y, "R:", 0)
         lcd.color(modeColor)
-        lcd.drawFilledRectangle(col2 - 2, y - 2, 120, 18)
+        lcd.drawFilledRectangle(col2 - 2, y - 2, 120, 24)
         lcd.color(lcd.RGB(255, 255, 255))
-        lcd.drawText(col2, y, mode, FONT_S + FONT_S)
+        lcd.drawText(col2, y, mode, FONT_S)
         lcd.color(textColor)
         
         local gain = calculateGain(widget.rudderValue)
         if gain ~= nil then
             lcd.drawNumber(col3, y, gain, 0)
-            lcd.drawText(col3 + 20, y, "%", 0)
+            lcd.drawText(col3 + 42  , y, "%", 0)
         end
         y = y + lineHeight
     end
@@ -195,7 +195,7 @@ local function paintFullView(widget, textColor, lineColor)
     
     -- Title
     lcd.color(textColor)
-    lcd.drawText(col1, y, "GYA553 Gyro XXX", FONT_BOLD)
+    lcd.drawText(col1, y, "GYA553 Gyro Status", FONT_BOLD)
     
     -- Debug: Show aileron raw value on screen
     lcd.color(lcd.RGB(255, 0, 0))
@@ -221,7 +221,7 @@ local function paintFullView(widget, textColor, lineColor)
         lcd.color(modeColor)
         lcd.drawFilledRectangle(col2 - 1, y + 1, 106, rowHeight - 6)
         lcd.color(lcd.RGB(255, 255, 255))  -- White text on colored background
-        lcd.drawText(col2 + 2, y + textOffset+2, mode, FONT_S)
+        lcd.drawText(col2 + 2, y + textOffset+4, mode, FONT_S)
         lcd.color(textColor)  -- Reset to theme color
         
         local gain = calculateGain(widget.aileronValue)
@@ -254,7 +254,7 @@ local function paintFullView(widget, textColor, lineColor)
         lcd.color(modeColor)
         lcd.drawFilledRectangle(col2 - 1, y + 1, 106, rowHeight - 6)
         lcd.color(lcd.RGB(255, 255, 255))  -- White text on colored background
-        lcd.drawText(col2 + 2, y + textOffset, mode, FONT_S)
+        lcd.drawText(col2 + 2, y + textOffset + 4, mode, FONT_S)
         lcd.color(textColor)  -- Reset to theme color
         
         local gain = calculateGain(widget.elevatorValue)
@@ -287,7 +287,7 @@ local function paintFullView(widget, textColor, lineColor)
         lcd.color(modeColor)
         lcd.drawFilledRectangle(col2 - 1, y + 1, 106, rowHeight - 6)
         lcd.color(lcd.RGB(255, 255, 255))  -- White text on colored background
-        lcd.drawText(col2 + 2, y + textOffset, mode, FONT_S)
+        lcd.drawText(col2 + 2, y + textOffset + 4, mode, FONT_S)
         lcd.color(textColor)  -- Reset to theme color
         
         local gain = calculateGain(widget.rudderValue)
