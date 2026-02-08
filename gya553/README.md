@@ -9,16 +9,16 @@ The GYA553 gyro requires specific gain channel values to control:
 - **Gain Percentage** - 0-100% sensitivity
 
 These scripts provide:
-1. **Gain Sources** (`gya553-gains/`) - Calculate the correct gain channel values based on a variable input
+1. **Gain Sources** (`gya553-gains/`) - Calculate the correct gain channel values based on a source input
 2. **Status Widget** (`gya553-status/`) - Display current gyro mode and gain percentages on your radio screen
 
 ## Setup Guide
 
-### Step 1: Create a Global Variable for Gain Control
+### Step 1: Create a var for Gain Control
 
 Before using the sources, create a Variable (Vars) in your model to control the gain rate:
 
-1. Go to **Model Setup** → **GVARs**
+1. Go to **Model Setup** → **VARS**
 2. Create a new variable (e.g., "Gyro Gain"), You can create a gain per axis or use a single gain for all axes.
 3. Set the range to 0-100%
 4. Set the gain to use, 50% is a good starting point
@@ -69,9 +69,10 @@ The sources automatically calculate the correct output value for the GYA553:
 
 ### Step 4: Add Sources to Your Mixer
 
+1. Use a Futaba GPB-1 Programmer to setup the gyro, note the channels that are configured for the gain for each axis. Make sure those channels are not used for other functions.
 1. Go to **Model Setup** → **Mixes**
-2. For each gyro gain channel (typically CH5, CH6, CH7 for Ail/Ele/Rud):
-3. Add the corresponding GYA553 source as the input
+2. For each gyro gain channel:
+3. Add the corresponding GYA553 source as the input, and set the output channel to match what you configured with the GPB-1
 
 ### Step 5: Install the Status Widget
 
@@ -87,10 +88,10 @@ Copy the `gya553-status/` directory to your radio's `/scripts/` folder to add th
 
 | Option | Description |
 |--------|-------------|
-| **Aileron Gain** | Source to monitor for aileron gain channel value |
-| **Elevator Gain** | Source to monitor for elevator gain channel value |
-| **Rudder Gain** | Source to monitor for rudder gain channel value |
-| **Auto Recovery** | Source for auto recovery status (optional) |
+| **Aileron Gain** | Channel to monitor for aileron gain channel value |
+| **Elevator Gain** | Channel to monitor for elevator gain channel value |
+| **Rudder Gain** | Channel to monitor for rudder gain channel value |
+| **Auto Recovery** | Channel for auto recovery status (optional) |
 | **Normal Color** | Color for Normal mode indicator (default: green) |
 | **Off Color** | Color for Off mode indicator (default: gray) |
 | **Heading Hold Color** | Color for Heading Hold mode indicator (default: blue) |
@@ -105,6 +106,11 @@ The widget shows for each configured axis:
 
 The widget automatically adapts to dark/light themes.
 
+## Connecting the Gyro
+
+Configure an pin on your receiver.  Connect this pin to the SBUS input on the gyro.  Connect your servos to the gyro.
+If you are using FrSky servos and wany telementry from the servos you can use the FrSky S2F.Port 2.0 Protocol Converter to feed telemetry back to the receiver.
+
 ## Directory Structure
 
 ```
@@ -116,33 +122,3 @@ gya553/
 ├── deploy.sh         # Deployment script for Ethos simulator
 └── README.md         # This file
 ```
-
-## Deployment
-
-Use the included deployment script to copy files to the Ethos Suite simulator:
-
-```bash
-./deploy.sh
-```
-
-## Example Configuration
-
-Here's a typical setup for a helicopter with GYA553:
-
-1. **Global Variable**: Create "Gyro Gain" GV controlled by a slider
-2. **Gain Sources**: Configure all three axes with:
-   - Gain Input: Gyro Gain GV
-   - Mode: Switched
-   - Normal Switch: SA↓
-   - Heading Hold Switch: SA↑
-3. **Mixer**: 
-   - CH5 = GYA553 Ail Gain
-   - CH6 = GYA553 Ele Gain
-   - CH7 = GYA553 Rud Gain
-4. **Widget**: Add to main screen, configure sources to match mixer channels
-
-This gives you:
-- SA up = Heading Hold mode
-- SA middle = Gyro off
-- SA down = Normal mode
-- Slider = Adjusts gain percentage in any mode
