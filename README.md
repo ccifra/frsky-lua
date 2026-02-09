@@ -28,8 +28,8 @@ See the [gya553/README.md](gya553/README.md) for detailed setup and configuratio
 
 ## Requirements
 
-- FRSky Ethos v1.6.3 or later
-- X20 series radio (tested on X20PROAW)
+- Systems with FRSky Ethos v1.6.3 or later
+- I test on an X20 series radio (X20PROAW)
 
 ## License
 
